@@ -35,7 +35,7 @@ public class OrderCreateHelper {
         Restaurant restaurant = checkRestaurant(createOrderCommand);
         Order order = orderDataMapper.createOrderCommandToOrder(createOrderCommand);
         OrderCreatedEvent orderCreatedEvent = orderDomainService.validateAndInitiateOrder(order, restaurant);
-        Order savedOrder = saveOrder(order);
+        saveOrder(order);
         log.info("Order event has been created with Order at: {} ", orderCreatedEvent.getCreatedAt());
         return orderCreatedEvent;
     }
