@@ -7,6 +7,7 @@ import com.food.ordering.system.domain.valueobject.RestaurantId;
 import com.food.ordering.system.order.service.domain.dto.create.CreateOrderCommand;
 import com.food.ordering.system.order.service.domain.dto.create.CreateOrderResponse;
 import com.food.ordering.system.order.service.domain.dto.create.OrderAddress;
+import com.food.ordering.system.order.service.domain.dto.track.TrackOrderResponse;
 import com.food.ordering.system.order.services.domain.entity.Order;
 import com.food.ordering.system.order.services.domain.entity.OrderItem;
 import com.food.ordering.system.order.services.domain.entity.Product;
@@ -33,7 +34,7 @@ public class OrderDataMapper {
 
     }
 
-    public Order createOrderCommandToOrder(CreateOrderCommand createOrderCommand) {
+public Order createOrderCommandToOrder(CreateOrderCommand createOrderCommand) {
         return Order.builder()
                 .customerId(new CustomerId(createOrderCommand.getCustomerId()))
                 .restaurantId(new RestaurantId(createOrderCommand.getRestaurantId()))
@@ -69,11 +70,23 @@ public class OrderDataMapper {
                 .postalCode(address.getPostCode()).build();
     }
 
-    public CreateOrderResponse OrderToCreatedOrderResponse(Order order) {
+    public CreateOrderResponse OrderToCreatedOrderResponse(Order order, String message) {
         return CreateOrderResponse
                 .builder()
                 .orderTrackingId(order.getTrackingId().getValue())
                 .orderStatus(order.getOrderStatus())
+                .message(message)
+                .build();
+    }
+
+    // TRACKING DATA MAPPER
+
+    public TrackOrderResponse orderToTrackOrderResponse(Order order) {
+        return TrackOrderResponse
+                .builder()
+                .orderStatus(order.getOrderStatus())
+                .orderTrackingId(order.getTrackingId().getValue())
+                .failureMessage(order.getFailureMessages())
                 .build();
     }
 
