@@ -54,3 +54,6 @@ The controller produces application/vnd.api.v1+json. See CreateOrderCommand for 
 | infrastructure | Kafka configuration, Avro models, Docker Compose |
 
 See [architecture notes](docs/architecture.md) for design decisions and remaining work.
+## More projects
+
+Browse the [20-project portfolio](docs/portfolio.md) for architecture, ML, automation, concurrency, desktop, and Java learning projects.
