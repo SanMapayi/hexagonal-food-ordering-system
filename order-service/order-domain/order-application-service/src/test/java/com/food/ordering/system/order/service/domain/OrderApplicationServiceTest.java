@@ -7,6 +7,7 @@ import com.food.ordering.system.order.service.domain.dto.create.OrderAddress;
 import com.food.ordering.system.order.service.domain.dto.create.OrderItem;
 import com.food.ordering.system.order.service.domain.mapper.OrderDataMapper;
 import com.food.ordering.system.order.service.domain.port.input.service.OrderApplicationUseCase;
+import com.food.ordering.system.order.service.domain.port.output.ai.order.noteinterpreter.OrderNoteInterpreter;
 import com.food.ordering.system.order.service.domain.port.output.repository.CustomerRepository;
 import com.food.ordering.system.order.service.domain.port.output.repository.OrderRepository;
 import com.food.ordering.system.order.service.domain.port.output.repository.RestaurantRepository;
@@ -44,6 +45,8 @@ public class OrderApplicationServiceTest {
     private CustomerRepository customerRepository;
     @Autowired
     private RestaurantRepository restaurantRepository;
+    @Autowired
+    private OrderNoteInterpreter orderNoteInterpreter;
 
     private CreateOrderCommand createOrderCommand;
     private CreateOrderCommand createOrderCommandWrongPrice;
@@ -55,7 +58,9 @@ public class OrderApplicationServiceTest {
     private final BigDecimal PRICE = new BigDecimal("200.00");
 
     @BeforeEach
-    public void inti() {
+    public void init() {
+
+        String ORDER_NOTES = "no onions pls, with pickles, extra spicy but not too spicy. Leave it at the door";
 
         createOrderCommand = CreateOrderCommand.builder()
                 .customerId(CUSTOMER_ID)
@@ -65,6 +70,7 @@ public class OrderApplicationServiceTest {
                         .postCode("1000AB")
                         .city("Paris")
                         .build())
+                .orderNotes(ORDER_NOTES)
                 .price(PRICE)
                 .items(
                         List.of(
@@ -117,13 +123,27 @@ public class OrderApplicationServiceTest {
                 .active(true)
                 .build();
 
+        OrderPreferences orderPreferences = OrderPreferences.builder()
+                .addIngredients(List.of("pickles"))
+                .removeIngredients(List.of("onions"))
+                .specialInstructions("Extra Spice")
+                .spiceLevel(SpiceLevel.MEDIUM)
+                .deliveryInstructions("Leave at the door")
+                .build();
+
+
         Order order = orderDataMapper.createOrderCommandToOrder(createOrderCommand);
         order.setId(new OrderId(ORDER_ID));
+        order.updateOrderPreferences(orderPreferences);
+        when(orderNoteInterpreter.interpret(ORDER_NOTES)).thenReturn(orderPreferences);
+
+
 
         when(customerRepository.findCustomer(CUSTOMER_ID)).thenReturn(Optional.of(customer));
         when(restaurantRepository.findRestaurantInformation(orderDataMapper.CreateOrderCommandToRestaurant(createOrderCommand)))
                 .thenReturn(Optional.of(restaurantResponse));
         when(orderRepository.save(any(Order.class))).thenReturn(order);
+
 
 
     }

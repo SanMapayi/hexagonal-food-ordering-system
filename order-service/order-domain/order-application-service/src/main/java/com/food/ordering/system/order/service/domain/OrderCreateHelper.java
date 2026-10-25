@@ -1,7 +1,9 @@
 package com.food.ordering.system.order.service.domain;
 
+import com.food.ordering.system.domain.valueobject.OrderPreferences;
 import com.food.ordering.system.order.service.domain.dto.create.CreateOrderCommand;
 import com.food.ordering.system.order.service.domain.mapper.OrderDataMapper;
+import com.food.ordering.system.order.service.domain.port.output.ai.order.noteinterpreter.OrderNoteInterpreter;
 import com.food.ordering.system.order.service.domain.port.output.repository.CustomerRepository;
 import com.food.ordering.system.order.service.domain.port.output.repository.OrderRepository;
 import com.food.ordering.system.order.service.domain.port.output.repository.RestaurantRepository;
@@ -30,16 +32,36 @@ public class OrderCreateHelper {
     private final CustomerRepository customerRepository;
     private final RestaurantRepository restaurantRepository;
     private final OrderDataMapper orderDataMapper;
+    private final OrderNoteInterpreter orderNoteInterpreter;
 
     @Transactional
     public OrderCreatedEvent persistOrder(CreateOrderCommand createOrderCommand) {
         checkCustomer(createOrderCommand.getCustomerId());
         Restaurant restaurant = checkRestaurant(createOrderCommand);
         Order order = orderDataMapper.createOrderCommandToOrder(createOrderCommand);
+
+        updateOrderPreferences(createOrderCommand, order);
+
         OrderCreatedEvent orderCreatedEvent = orderDomainService.validateAndInitiateOrder(order, restaurant);
         saveOrder(order);
         log.info("Order event has been created with Order at: {} ", orderCreatedEvent.getCreatedAt());
         return orderCreatedEvent;
+    }
+
+    private void updateOrderPreferences(CreateOrderCommand createOrderCommand, Order order) {
+        try {
+            String orderNotes = createOrderCommand.getOrderNotes();
+            if (orderNotes == null || orderNotes.isEmpty()) {
+                order.updateOrderPreferences(OrderPreferences.builder().build());
+                return;
+            }
+            OrderPreferences orderPreferences = orderNoteInterpreter.interpret(orderNotes);
+            order.updateOrderPreferences(orderPreferences);
+        } catch (Exception e) {
+            log.warn("Encountered error in AI Order Note Interpreter. Skipping order notes!");
+            order.updateOrderPreferences(OrderPreferences.builder().build());
+
+        }
     }
 
 
